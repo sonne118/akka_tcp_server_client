@@ -1,11 +1,13 @@
 ﻿using System.Net.Sockets;
 using System.Text;
+using System.Security.Cryptography;
 
 namespace TCP_Client
 {
     public delegate Task MessageReceivedHandler(object sender, string message);
     public class ExTcpClient
     {
+        private const string apiKey = "valid_api_key_1";
         public event MessageReceivedHandler _MessageReceived;
         private NetworkStream stream;
         private TcpClient _client;
@@ -27,10 +29,16 @@ namespace TCP_Client
         }
         private async Task<bool> SendApiKey()
         {
-
-            var apiKey = "valid_api_key_1";
             var apiKeyBytes = Encoding.UTF8.GetBytes(apiKey + "\n");
-            await stream.WriteAsync(apiKeyBytes, 0, apiKeyBytes.Length);
+
+            using (SHA256 sha256Hash = SHA256.Create())
+            {
+                var hashBytes = sha256Hash.ComputeHash(apiKeyBytes);
+                var hash = BitConverter.ToString(hashBytes).Replace(".","").ToLower();
+
+                var apiKeyBytesToSend = Encoding.UTF8.GetBytes(hash + "\n");
+                await stream.WriteAsync(apiKeyBytesToSend, 0, apiKeyBytesToSend.Length);
+            }
 
             var buffer = new byte[1024];
             var bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);

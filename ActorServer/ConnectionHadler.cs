@@ -1,6 +1,8 @@
 ﻿using Akka.Actor;
 using Akka.IO;
 using System.Text;
+using System.Security.Cryptography;
+using System.Security.Policy;
 
 public class ConnectionHandler : ReceiveActor
 {
@@ -18,8 +20,9 @@ public class ConnectionHandler : ReceiveActor
         {
             var data = received.Data.ToArray();
             var apiKey = Encoding.UTF8.GetString(data).Trim();
+
             authActor.Ask<bool>(new AuthActor.Authenticate(apiKey))
-                      .PipeTo(Self, success: isAuthenticated => new AuthResult(isAuthenticated));
+                          .PipeTo(Self, success: isAuthenticated => new AuthResult(isAuthenticated));
         });
 
         Receive<AuthResult>(authResult =>
